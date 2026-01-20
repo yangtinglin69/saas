@@ -69,38 +69,38 @@ export default function DashboardPage() {
         <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2">歡迎使用聯盟行銷系統！</h2>
-              <p className="text-gray-600 mb-4">依照以下步驟開始建立你的第一個站點：</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">歡迎使用聯盟行銷系統</h2>
+              <p className="text-gray-600 mb-4">依照以下步驟開始建立你的第一個站點</p>
             </div>
             <button
               onClick={hideGuide}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 text-xl"
             >
-              X
+              x
             </button>
           </div>
           
           <div className="grid md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">1</div>
+              <div className="text-2xl mb-2 font-bold text-blue-600">1</div>
               <h3 className="font-semibold text-gray-900 mb-1">創建站點</h3>
               <p className="text-sm text-gray-600">點擊創建新站點，選擇主網域並設定子網域名稱</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">2</div>
+              <div className="text-2xl mb-2 font-bold text-blue-600">2</div>
               <h3 className="font-semibold text-gray-900 mb-1">新增產品</h3>
               <p className="text-sm text-gray-600">進入站點，在產品管理新增你要推廣的產品</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">3</div>
+              <div className="text-2xl mb-2 font-bold text-blue-600">3</div>
               <h3 className="font-semibold text-gray-900 mb-1">設定模組</h3>
               <p className="text-sm text-gray-600">在模組管理編輯首屏、痛點、故事等區塊</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">4</div>
+              <div className="text-2xl mb-2 font-bold text-blue-600">4</div>
               <h3 className="font-semibold text-gray-900 mb-1">查看網站</h3>
               <p className="text-sm text-gray-600">點擊查看網站預覽你的聯盟行銷頁面</p>
             </div>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                   >
                     管理站點
                   </Link>
-                  
+                  <a
                     href={`https://${site.full_domain}`}
                     target="_blank"
                     rel="noopener"
