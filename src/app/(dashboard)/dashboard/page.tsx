@@ -43,6 +43,11 @@ export default function DashboardPage() {
     localStorage.setItem('hideGuide', 'true');
   }
 
+  function openGuide() {
+    setShowGuide(true);
+    localStorage.removeItem('hideGuide');
+  }
+
   async function deleteSite(siteId: string, siteName: string) {
     const confirmed = window.confirm(`確定要刪除站點「${siteName}」嗎？\n\n此操作將刪除所有相關的產品、模組和文章資料，且無法復原！`);
     
@@ -51,7 +56,6 @@ export default function DashboardPage() {
     setDeleting(siteId);
     
     try {
-      // 刪除站點（關聯資料會因為 ON DELETE CASCADE 自動刪除）
       const { error } = await supabase
         .from('sites')
         .delete()
@@ -59,7 +63,6 @@ export default function DashboardPage() {
       
       if (error) throw error;
       
-      // 重新載入站點列表
       loadSites();
     } catch (err: any) {
       alert('刪除失敗：' + err.message);
@@ -83,12 +86,22 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">我的站點</h1>
           <p className="text-gray-600 mt-1">管理你的聯盟行銷網站</p>
         </div>
-        <Link
-          href="/dashboard/sites/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-        >
-          + 創建新站點
-        </Link>
+        <div className="flex items-center gap-3">
+          {!showGuide && (
+            <button
+              onClick={openGuide}
+              className="px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg text-sm"
+            >
+              ❓ 使用說明
+            </button>
+          )}
+          <Link
+            href="/dashboard/sites/new"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          >
+            + 創建新站點
+          </Link>
+        </div>
       </div>
 
       {showGuide && (
