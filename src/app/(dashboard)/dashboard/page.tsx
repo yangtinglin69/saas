@@ -23,7 +23,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadSites();
-    // 檢查是否已看過引導
     const guideHidden = localStorage.getItem('hideGuide');
     if (guideHidden) setShowGuide(false);
   }, []);
@@ -66,58 +65,55 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* 新手引導區塊 */}
       {showGuide && (
         <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2">👋 歡迎使用聯盟行銷系統！</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">歡迎使用聯盟行銷系統！</h2>
               <p className="text-gray-600 mb-4">依照以下步驟開始建立你的第一個站點：</p>
             </div>
             <button
               onClick={hideGuide}
               className="text-gray-400 hover:text-gray-600"
-              title="隱藏引導"
             >
-              ✕
+              X
             </button>
           </div>
           
           <div className="grid md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">1️⃣</div>
+              <div className="text-2xl mb-2">1</div>
               <h3 className="font-semibold text-gray-900 mb-1">創建站點</h3>
-              <p className="text-sm text-gray-600">點擊「創建新站點」，選擇主網域並設定子網域名稱</p>
+              <p className="text-sm text-gray-600">點擊創建新站點，選擇主網域並設定子網域名稱</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">2️⃣</div>
+              <div className="text-2xl mb-2">2</div>
               <h3 className="font-semibold text-gray-900 mb-1">新增產品</h3>
-              <p className="text-sm text-gray-600">進入站點 → 📦 產品管理，新增你要推廣的產品</p>
+              <p className="text-sm text-gray-600">進入站點，在產品管理新增你要推廣的產品</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">3️⃣</div>
+              <div className="text-2xl mb-2">3</div>
               <h3 className="font-semibold text-gray-900 mb-1">設定模組</h3>
-              <p className="text-sm text-gray-600">進入 🧩 模組管理，編輯首屏、痛點、故事等區塊</p>
+              <p className="text-sm text-gray-600">在模組管理編輯首屏、痛點、故事等區塊</p>
             </div>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-2">4️⃣</div>
+              <div className="text-2xl mb-2">4</div>
               <h3 className="font-semibold text-gray-900 mb-1">查看網站</h3>
-              <p className="text-sm text-gray-600">點擊「查看網站」預覽你的聯盟行銷頁面</p>
+              <p className="text-sm text-gray-600">點擊查看網站預覽你的聯盟行銷頁面</p>
             </div>
           </div>
 
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-amber-800 text-sm">
-              💡 <strong>提示：</strong>你也可以使用 📝 文章管理 發布部落格文章，或透過 📥 匯入中心 批量匯入產品資料。
+              提示：你也可以使用文章管理發布部落格文章，或透過匯入中心批量匯入產品資料。
             </p>
           </div>
         </div>
       )}
 
-      {/* 站點列表 */}
       {sites.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border p-12 text-center">
           <div className="text-6xl mb-4">🏗️</div>
@@ -161,7 +157,7 @@ export default function DashboardPage() {
                     rel="noopener"
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
                   >
-                    🔗 查看
+                    查看
                   </a>
                 </div>
               </div>
