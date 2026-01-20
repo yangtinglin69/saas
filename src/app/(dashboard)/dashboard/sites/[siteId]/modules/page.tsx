@@ -243,6 +243,36 @@ export default function ModulesPage() {
                       className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
+
+                  {/* 批量匯入區 */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📥 批量匯入痛點</label>
+                    <p className="text-xs text-gray-500 mb-2">每行一個痛點，格式：icon | 痛點內容</p>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+                      rows={4}
+                      placeholder="😫 | 試過很多方法都沒效果&#10;😰 | 花了很多錢卻買到不適合的產品&#10;🤔 | 不知道該選哪一款"
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (!text) return;
+                        const lines = text.split('\n').filter(Boolean);
+                        const newPoints = lines.map(line => {
+                          const parts = line.split('|').map(p => p.trim());
+                          return {
+                            icon: parts[0] || '😫',
+                            text: parts[1] || ''
+                          };
+                        }).filter(p => p.text);
+                        if (newPoints.length > 0) {
+                          const existing = editingModule.content?.points || [];
+                          updateContent('points', [...existing, ...newPoints]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">輸入完成後點擊其他地方即可匯入</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">痛點列表</label>
                     {(editingModule.content?.points || []).map((point: any, index: number) => (
@@ -280,15 +310,29 @@ export default function ModulesPage() {
                         </button>
                       </div>
                     ))}
-                    <button
-                      onClick={() => {
-                        const points = [...(editingModule.content?.points || []), { icon: '😫', text: '' }];
-                        updateContent('points', points);
-                      }}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      + 新增痛點
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const points = [...(editingModule.content?.points || []), { icon: '😫', text: '' }];
+                          updateContent('points', points);
+                        }}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        + 新增痛點
+                      </button>
+                      {(editingModule.content?.points || []).length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('確定要清空所有痛點嗎？')) {
+                              updateContent('points', []);
+                            }
+                          }}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          清空全部
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -359,6 +403,37 @@ export default function ModulesPage() {
                       placeholder="https://..."
                     />
                   </div>
+                  
+                  {/* 批量匯入區 */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📥 批量匯入特色</label>
+                    <p className="text-xs text-gray-500 mb-2">每行一個特色，格式：icon | 標題 | 說明</p>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+                      rows={4}
+                      placeholder="🔬 | 專業測試 | 由專業團隊進行嚴格測試&#10;📊 | 數據分析 | 收集真實用戶回饋數據&#10;✅ | 公正評比 | 不受廠商贊助影響"
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (!text) return;
+                        const lines = text.split('\n').filter(Boolean);
+                        const newFeatures = lines.map(line => {
+                          const parts = line.split('|').map(p => p.trim());
+                          return {
+                            icon: parts[0] || '✨',
+                            title: parts[1] || '',
+                            description: parts[2] || ''
+                          };
+                        }).filter(f => f.title);
+                        if (newFeatures.length > 0) {
+                          const existing = editingModule.content?.features || [];
+                          updateContent('features', [...existing, ...newFeatures]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">輸入完成後點擊其他地方即可匯入</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">特色/方法列表</label>
                     {(editingModule.content?.features || []).map((feature: any, index: number) => (
@@ -409,15 +484,29 @@ export default function ModulesPage() {
                         />
                       </div>
                     ))}
-                    <button
-                      onClick={() => {
-                        const features = [...(editingModule.content?.features || []), { icon: '✨', title: '', description: '' }];
-                        updateContent('features', features);
-                      }}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      + 新增特色
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const features = [...(editingModule.content?.features || []), { icon: '✨', title: '', description: '' }];
+                          updateContent('features', features);
+                        }}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        + 新增特色
+                      </button>
+                      {(editingModule.content?.features || []).length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('確定要清空所有特色嗎？')) {
+                              updateContent('features', []);
+                            }
+                          }}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          清空全部
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -444,9 +533,40 @@ export default function ModulesPage() {
                       placeholder="根據你的需求選擇"
                     />
                   </div>
+
+                  {/* 批量匯入區 */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📥 批量匯入比較項目</label>
+                    <p className="text-xs text-gray-500 mb-2">每行一個，格式：icon | 使用者類型 | 推薦產品 | 推薦原因</p>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+                      rows={4}
+                      placeholder="👶 | 新手入門 | A 產品 | 操作簡單易上手&#10;💪 | 進階使用者 | B 產品 | 功能強大完整&#10;💰 | 預算有限 | C 產品 | 高CP值首選"
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (!text) return;
+                        const lines = text.split('\n').filter(Boolean);
+                        const newItems = lines.map(line => {
+                          const parts = line.split('|').map(p => p.trim());
+                          return {
+                            icon: parts[0] || '👤',
+                            type: parts[1] || '',
+                            recommendation: parts[2] || '',
+                            reason: parts[3] || ''
+                          };
+                        }).filter(item => item.type);
+                        if (newItems.length > 0) {
+                          const existing = editingModule.content?.items || [];
+                          updateContent('items', [...existing, ...newItems]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">輸入完成後點擊其他地方即可匯入</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">比較項目</label>
-                    <p className="text-xs text-gray-500 mb-2">設定不同類型的使用者適合哪款產品</p>
                     {(editingModule.content?.items || []).map((item: any, index: number) => (
                       <div key={index} className="border rounded-lg p-3 mb-3 bg-gray-50">
                         <div className="flex gap-2 mb-2">
@@ -506,15 +626,29 @@ export default function ModulesPage() {
                         />
                       </div>
                     ))}
-                    <button
-                      onClick={() => {
-                        const items = [...(editingModule.content?.items || []), { icon: '👤', type: '', recommendation: '', reason: '' }];
-                        updateContent('items', items);
-                      }}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      + 新增比較項目
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const items = [...(editingModule.content?.items || []), { icon: '👤', type: '', recommendation: '', reason: '' }];
+                          updateContent('items', items);
+                        }}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        + 新增比較項目
+                      </button>
+                      {(editingModule.content?.items || []).length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('確定要清空所有比較項目嗎？')) {
+                              updateContent('items', []);
+                            }
+                          }}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          清空全部
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -579,6 +713,37 @@ export default function ModulesPage() {
                       className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
+
+                  {/* 批量匯入區 */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📥 批量匯入評價</label>
+                    <p className="text-xs text-gray-500 mb-2">每行一則評價，格式：姓名 | 身份 | 評價內容</p>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+                      rows={4}
+                      placeholder="王小明 | 上班族 | 用了之後效率提升很多！&#10;李小華 | 學生 | CP值超高，推薦給大家&#10;陳大文 | 自由工作者 | 比其他產品好用很多"
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (!text) return;
+                        const lines = text.split('\n').filter(Boolean);
+                        const newItems = lines.map(line => {
+                          const parts = line.split('|').map(p => p.trim());
+                          return {
+                            name: parts[0] || '',
+                            title: parts[1] || '',
+                            content: parts[2] || ''
+                          };
+                        }).filter(item => item.name && item.content);
+                        if (newItems.length > 0) {
+                          const existing = editingModule.content?.items || [];
+                          updateContent('items', [...existing, ...newItems]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">輸入完成後點擊其他地方即可匯入</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">評價列表</label>
                     {(editingModule.content?.items || []).map((item: any, index: number) => (
@@ -629,15 +794,29 @@ export default function ModulesPage() {
                         />
                       </div>
                     ))}
-                    <button
-                      onClick={() => {
-                        const items = [...(editingModule.content?.items || []), { name: '', title: '', content: '' }];
-                        updateContent('items', items);
-                      }}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      + 新增評價
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const items = [...(editingModule.content?.items || []), { name: '', title: '', content: '' }];
+                          updateContent('items', items);
+                        }}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        + 新增評價
+                      </button>
+                      {(editingModule.content?.items || []).length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('確定要清空所有評價嗎？')) {
+                              updateContent('items', []);
+                            }
+                          }}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          清空全部
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -663,6 +842,36 @@ export default function ModulesPage() {
                       className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
+
+                  {/* 批量匯入區 */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📥 批量匯入 FAQ</label>
+                    <p className="text-xs text-gray-500 mb-2">每行一個問答，格式：問題 | 回答</p>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+                      rows={4}
+                      placeholder="這個產品適合新手嗎？ | 非常適合！我們有完整的新手教學&#10;有保固嗎？ | 提供一年保固服務&#10;可以退貨嗎？ | 7天內無條件退貨"
+                      onBlur={(e) => {
+                        const text = e.target.value.trim();
+                        if (!text) return;
+                        const lines = text.split('\n').filter(Boolean);
+                        const newItems = lines.map(line => {
+                          const parts = line.split('|').map(p => p.trim());
+                          return {
+                            question: parts[0] || '',
+                            answer: parts[1] || ''
+                          };
+                        }).filter(item => item.question && item.answer);
+                        if (newItems.length > 0) {
+                          const existing = editingModule.content?.items || [];
+                          updateContent('items', [...existing, ...newItems]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">輸入完成後點擊其他地方即可匯入</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">問答列表</label>
                     {(editingModule.content?.items || []).map((item: any, index: number) => (
@@ -702,15 +911,29 @@ export default function ModulesPage() {
                         />
                       </div>
                     ))}
-                    <button
-                      onClick={() => {
-                        const items = [...(editingModule.content?.items || []), { question: '', answer: '' }];
-                        updateContent('items', items);
-                      }}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      + 新增問答
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const items = [...(editingModule.content?.items || []), { question: '', answer: '' }];
+                          updateContent('items', items);
+                        }}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        + 新增問答
+                      </button>
+                      {(editingModule.content?.items || []).length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('確定要清空所有問答嗎？')) {
+                              updateContent('items', []);
+                            }
+                          }}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          清空全部
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
