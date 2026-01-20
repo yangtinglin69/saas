@@ -11,6 +11,11 @@ interface Post {
   slug: string;
   status: string;
   author: string;
+  category: string;
+  tags: string[];
+  excerpt: string;
+  content: string;
+  featured_image: string;
   published_at: string;
   created_at: string;
 }
@@ -34,20 +39,23 @@ export default function PostsPage() {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [generatedKey, setGeneratedKey] = useState('');
+  
+  // 文章編輯
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<Partial<Post> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [siteId]);
 
   async function loadData() {
-    // 載入文章
     const { data: postsData } = await supabase
       .from('posts')
       .select('*')
       .eq('site_id', siteId)
       .order('created_at', { ascending: false });
 
-    // 載入 API Keys
     const { data: keysData } = await supabase
       .from('api_keys')
       .select('*')
@@ -60,7 +68,6 @@ export default function PostsPage() {
   }
 
   async function generateApiKey() {
-    // 產生隨機 API Key
     const key = 'ak_' + Array.from(crypto.getRandomValues(new Uint8Array(24)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
@@ -113,6 +120,92 @@ export default function PostsPage() {
       .eq('id', post.id);
     
     loadData();
+  }
+
+  function openNewPost() {
+    setEditingPost({
+      title: '',
+      slug: '',
+      excerpt: '',
+      content: '',
+      author: '',
+      category: '',
+      tags: [],
+      featured_image: '',
+      status: 'draft'
+    });
+    setShowPostModal(true);
+  }
+
+  function openEditPost(post: Post) {
+    setEditingPost(post);
+    setShowPostModal(true);
+  }
+
+  async function savePost() {
+    if (!editingPost?.title || !editingPost?.slug) {
+      alert('請填寫標題和網址代稱');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      if (editingPost.id) {
+        // 更新
+        const { error } = await supabase
+          .from('posts')
+          .update({
+            title: editingPost.title,
+            slug: editingPost.slug,
+            excerpt: editingPost.excerpt,
+            content: editingPost.content,
+            author: editingPost.author,
+            category: editingPost.category,
+            tags: editingPost.tags,
+            featured_image: editingPost.featured_image,
+            status: editingPost.status,
+            published_at: editingPost.status === 'published' ? new Date().toISOString() : null
+          })
+          .eq('id', editingPost.id);
+
+        if (error) throw error;
+      } else {
+        // 新增
+        const { error } = await supabase
+          .from('posts')
+          .insert({
+            site_id: siteId,
+            title: editingPost.title,
+            slug: editingPost.slug,
+            excerpt: editingPost.excerpt,
+            content: editingPost.content,
+            author: editingPost.author,
+            category: editingPost.category,
+            tags: editingPost.tags,
+            featured_image: editingPost.featured_image,
+            status: editingPost.status,
+            published_at: editingPost.status === 'published' ? new Date().toISOString() : null
+          });
+
+        if (error) throw error;
+      }
+
+      setShowPostModal(false);
+      setEditingPost(null);
+      loadData();
+    } catch (err: any) {
+      alert('儲存失敗：' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function generateSlug(title: string) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   if (loading) {
@@ -185,15 +278,23 @@ export default function PostsPage() {
       {/* 文章列表 */}
       <div className="bg-white rounded-xl shadow-sm border">
         <div className="p-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">📄 文章列表</h2>
-          <span className="text-sm text-gray-500">共 {posts.length} 篇文章</span>
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold text-gray-900">📄 文章列表</h2>
+            <span className="text-sm text-gray-500">共 {posts.length} 篇文章</span>
+          </div>
+          <button
+            onClick={openNewPost}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+          >
+            + 手動新增文章
+          </button>
         </div>
 
         {posts.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p className="text-4xl mb-2">📭</p>
             <p>尚未有任何文章</p>
-            <p className="text-sm mt-1">使用 API 從 n8n 推送文章，或手動新增</p>
+            <p className="text-sm mt-1">使用 API 從 n8n 推送文章，或點擊上方按鈕手動新增</p>
           </div>
         ) : (
           <div className="divide-y">
@@ -202,6 +303,11 @@ export default function PostsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-gray-900">{post.title}</h3>
+                    {post.category && (
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">
+                        {post.category}
+                      </span>
+                    )}
                     <span className={`px-2 py-0.5 rounded-full text-xs ${
                       post.status === 'published' 
                         ? 'bg-green-100 text-green-700' 
@@ -211,7 +317,14 @@ export default function PostsPage() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    /{post.slug} • {post.author || '未知作者'} • {new Date(post.created_at).toLocaleDateString()}
+                    /blog/{post.slug} • {post.author || '未知作者'} • {new Date(post.created_at).toLocaleDateString()}
+                    {post.tags && post.tags.length > 0 && (
+                      <span className="ml-2">
+                        {post.tags.map((tag, i) => (
+                          <span key={i} className="text-gray-400">#{tag} </span>
+                        ))}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -221,12 +334,12 @@ export default function PostsPage() {
                   >
                     {post.status === 'published' ? '改為草稿' : '發布'}
                   </button>
-                  <Link
-                    href={`/dashboard/sites/${siteId}/posts/${post.id}`}
+                  <button
+                    onClick={() => openEditPost(post)}
                     className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg text-sm"
                   >
                     編輯
-                  </Link>
+                  </button>
                   <button
                     onClick={() => deletePost(post.id)}
                     className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg text-sm"
@@ -298,6 +411,165 @@ export default function PostsPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 文章編輯 Modal */}
+      {showPostModal && editingPost && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                {editingPost.id ? '編輯文章' : '新增文章'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPostModal(false);
+                  setEditingPost(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">文章標題 *</label>
+                <input
+                  type="text"
+                  value={editingPost.title || ''}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setEditingPost({
+                      ...editingPost,
+                      title,
+                      slug: editingPost.slug || generateSlug(title)
+                    });
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="輸入文章標題"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">網址代稱 (Slug) *</label>
+                <div className="flex items-center">
+                  <span className="text-gray-500 text-sm mr-2">/blog/</span>
+                  <input
+                    type="text"
+                    value={editingPost.slug || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
+                    className="flex-1 px-3 py-2 border rounded-lg"
+                    placeholder="my-article-slug"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">作者</label>
+                  <input
+                    type="text"
+                    value={editingPost.author || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, author: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="作者名稱"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">狀態</label>
+                  <select
+                    value={editingPost.status || 'draft'}
+                    onChange={(e) => setEditingPost({ ...editingPost, status: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="draft">草稿</option>
+                    <option value="published">已發布</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">分類</label>
+                  <input
+                    type="text"
+                    value={editingPost.category || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="例如：床墊評比、選購指南"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">標籤（逗號分隔）</label>
+                  <input
+                    type="text"
+                    value={(editingPost.tags || []).join(', ')}
+                    onChange={(e) => setEditingPost({ 
+                      ...editingPost, 
+                      tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                    })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="床墊, 睡眠, 推薦"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">特色圖片網址</label>
+                <input
+                  type="text"
+                  value={editingPost.featured_image || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, featured_image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">摘要</label>
+                <textarea
+                  value={editingPost.excerpt || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  rows={2}
+                  placeholder="文章摘要（會顯示在列表頁）"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">文章內容（支援 HTML）</label>
+                <textarea
+                  value={editingPost.content || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+                  rows={12}
+                  placeholder="<h2>標題</h2>&#10;<p>文章內容...</p>"
+                />
+                <p className="text-xs text-gray-500 mt-1">支援 HTML 格式，可直接貼上從 n8n 產生的 HTML 內容</p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowPostModal(false);
+                  setEditingPost(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                取消
+              </button>
+              <button
+                onClick={savePost}
+                disabled={saving}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? '儲存中...' : '儲存文章'}
+              </button>
+            </div>
           </div>
         </div>
       )}
