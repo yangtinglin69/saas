@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
 interface Props {
-  params: { domain: string; category: string };
+  params: { domain: string; slug: string };
 }
 
-async function getCategoryData(domain: string, category: string) {
+async function getPostData(domain: string, slug: string) {
   const { data: site } = await supabase
     .from('sites')
     .select('*')
@@ -16,37 +16,44 @@ async function getCategoryData(domain: string, category: string) {
 
   if (!site) return null;
 
-  const decodedCategory = decodeURIComponent(category);
-
-  // 查詢該分類的文章
-  const { data: posts } = await supabase
+  const { data: post } = await supabase
     .from('posts')
     .select('*')
     .eq('site_id', site.id)
+    .eq('slug', slug)
     .eq('status', 'published')
-    .eq('category', decodedCategory)
-    .order('published_at', { ascending: false });
+    .single();
 
-  // 取得所有分類
-  const { data: allPosts } = await supabase
+  if (!post) return null;
+
+  // 查詢同分類的相關文章
+  const { data: relatedPosts } = await supabase
     .from('posts')
-    .select('category')
+    .select('id, title, slug, featured_image, published_at, category')
     .eq('site_id', site.id)
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .neq('id', post.id)
+    .order('published_at', { ascending: false })
+    .limit(6);
 
-  const categories = [...new Set((allPosts || []).map((p: any) => p.category).filter(Boolean))];
+  // 優先顯示同分類的文章
+  const sortedRelated = relatedPosts?.sort((a: any, b: any) => {
+    if (a.category === post.category && b.category !== post.category) return -1;
+    if (b.category === post.category && a.category !== post.category) return 1;
+    return 0;
+  }).slice(0, 3) || [];
 
-  return { site, posts: posts || [], categories, currentCategory: decodedCategory };
+  return { site, post, relatedPosts: sortedRelated };
 }
 
-export default async function CategoryPage({ params }: Props) {
-  const data = await getCategoryData(params.domain, params.category);
+export default async function PostPage({ params }: Props) {
+  const data = await getPostData(params.domain, params.slug);
 
   if (!data) {
     notFound();
   }
 
-  const { site, posts, categories, currentCategory } = data;
+  const { site, post, relatedPosts } = data;
   const config = site.config || {};
   const colors = config.colors || {};
 
@@ -82,107 +89,149 @@ export default async function CategoryPage({ params }: Props) {
         </div>
       </header>
 
-      {/* Category Header */}
-      <section className="py-12 px-4" style={{ backgroundColor: colors.headerBg || '#1e3a5f' }}>
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-sm opacity-70 mb-2" style={{ color: colors.headerText || '#fff' }}>
-            分類
-          </p>
-          <h1 className="text-4xl font-bold mb-4" style={{ color: colors.headerText || '#fff' }}>
-            {currentCategory}
-          </h1>
-          <p className="text-lg opacity-80" style={{ color: colors.headerText || '#fff' }}>
-            共 {posts.length} 篇文章
-          </p>
-        </div>
-      </section>
-
-      {/* Categories Navigation */}
-      <section className="py-6 px-4 border-b bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-gray-500 text-sm">分類：</span>
-            <Link 
-              href="/blog"
-              className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            >
-              全部
-            </Link>
-            {categories.map((cat: string) => (
-              <Link 
-                key={cat}
-                href={`/blog/category/${encodeURIComponent(cat)}`}
-                className={`px-3 py-1 rounded-full text-sm transition ${
-                  cat === currentCategory 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {cat}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Posts Grid */}
-      <section className="py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          {posts.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-4xl mb-4">📭</p>
-              <p className="text-gray-500">此分類尚無文章</p>
-              <Link href="/blog" className="text-blue-600 hover:underline mt-2 inline-block">
-                ← 返回全部文章
-              </Link>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post: any) => (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
-                  className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group"
+      {/* Article */}
+      <article className="py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          {/* Breadcrumb */}
+          <nav className="mb-6 text-sm text-gray-500">
+            <Link href="/" className="hover:text-gray-700">首頁</Link>
+            <span className="mx-2">/</span>
+            <Link href="/blog" className="hover:text-gray-700">部落格</Link>
+            {post.category && (
+              <>
+                <span className="mx-2">/</span>
+                <Link 
+                  href={`/blog/category/${encodeURIComponent(post.category)}`} 
+                  className="hover:text-gray-700"
                 >
-                  {post.featured_image && (
+                  {post.category}
+                </Link>
+              </>
+            )}
+            <span className="mx-2">/</span>
+            <span className="text-gray-700">{post.title}</span>
+          </nav>
+
+          {/* Featured Image */}
+          {post.featured_image && (
+            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden mb-8">
+              <img 
+                src={post.featured_image} 
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Title & Meta */}
+          <header className="mb-8">
+            {post.category && (
+              <Link 
+                href={`/blog/category/${encodeURIComponent(post.category)}`}
+                className="inline-block px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition mb-4"
+              >
+                {post.category}
+              </Link>
+            )}
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {post.seo_title || post.title}
+            </h1>
+            <div className="flex items-center gap-4 text-gray-500 text-sm">
+              <span>👤 {post.author || '編輯部'}</span>
+              <span>📅 {new Date(post.published_at).toLocaleDateString()}</span>
+            </div>
+          </header>
+
+          {/* Content */}
+          <div 
+            className="prose prose-lg max-w-none
+              prose-headings:text-gray-900 prose-headings:font-bold
+              prose-p:text-gray-700 prose-p:leading-relaxed
+              prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+              prose-img:rounded-xl prose-img:shadow-sm
+              prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
+              prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+              prose-pre:bg-gray-900 prose-pre:text-gray-100
+              prose-ul:list-disc prose-ol:list-decimal
+              prose-li:text-gray-700
+            "
+            dangerouslySetInnerHTML={{ __html: post.content || '' }}
+          />
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-8 pt-8 border-t">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">標籤</h3>
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map((tag: string, i: number) => (
+                  <Link 
+                    key={i}
+                    href={`/blog/tag/${encodeURIComponent(tag)}`}
+                    className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200 transition"
+                  >
+                    #{tag}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SEO Keywords (if no tags) */}
+          {(!post.tags || post.tags.length === 0) && post.seo_keywords && (
+            <div className="mt-8 pt-8 border-t">
+              <div className="flex flex-wrap gap-2">
+                {post.seo_keywords.split(',').map((keyword: string, i: number) => (
+                  <span 
+                    key={i}
+                    className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm"
+                  >
+                    {keyword.trim()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </article>
+
+      {/* Related Posts */}
+      {relatedPosts.length > 0 && (
+        <section className="py-12 px-4 bg-gray-100">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">相關文章</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              {relatedPosts.map((relPost: any) => (
+                <Link
+                  key={relPost.id}
+                  href={`/blog/${relPost.slug}`}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group"
+                >
+                  {relPost.featured_image && (
                     <div className="aspect-video bg-gray-100 overflow-hidden">
                       <img 
-                        src={post.featured_image} 
-                        alt={post.title}
+                        src={relPost.featured_image} 
+                        alt={relPost.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition"
                       />
                     </div>
                   )}
-                  <div className="p-5">
-                    <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 mb-2">
-                      {post.category}
-                    </span>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition">
-                      {post.title}
-                    </h2>
-                    {post.excerpt && (
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                        {post.excerpt}
-                      </p>
+                  <div className="p-4">
+                    {relPost.category && (
+                      <span className="text-xs text-blue-600 mb-1 inline-block">{relPost.category}</span>
                     )}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{post.author || '編輯部'}</span>
-                      <span>{new Date(post.published_at).toLocaleDateString()}</span>
-                    </div>
-                    {post.tags && post.tags.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {post.tags.slice(0, 3).map((tag: string, i: number) => (
-                          <span key={i} className="text-xs text-gray-400">#{tag}</span>
-                        ))}
-                      </div>
-                    )}
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">
+                      {relPost.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(relPost.published_at).toLocaleDateString()}
+                    </p>
                   </div>
                 </Link>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer style={{ backgroundColor: colors.footerBg || '#111827' }}>
@@ -194,4 +243,29 @@ export default async function CategoryPage({ params }: Props) {
       </footer>
     </div>
   );
+}
+
+// SEO Metadata
+export async function generateMetadata({ params }: Props) {
+  const data = await getPostData(params.domain, params.slug);
+  
+  if (!data) {
+    return { title: 'Not Found' };
+  }
+
+  const { post, site } = data;
+
+  return {
+    title: post.seo_title || post.title,
+    description: post.seo_description || post.excerpt,
+    keywords: post.seo_keywords,
+    openGraph: {
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+      images: post.featured_image ? [post.featured_image] : [],
+      type: 'article',
+      publishedTime: post.published_at,
+      authors: [post.author || site.name],
+    },
+  };
 }
