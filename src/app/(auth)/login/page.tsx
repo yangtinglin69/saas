@@ -10,6 +10,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 錯誤訊息中英對照
+  function translateError(message: string): string {
+    const errorMap: Record<string, string> = {
+      'Invalid login credentials': '帳號或密碼錯誤',
+      'Email not confirmed': '信箱尚未驗證',
+      'User not found': '找不到此帳號',
+      'Invalid email or password': '帳號或密碼錯誤',
+      'Too many requests': '嘗試次數過多，請稍後再試',
+      'Network error': '網路連線錯誤',
+    };
+    return errorMap[message] || '登入失敗，請稍後再試';
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -24,7 +37,7 @@ export default function LoginPage() {
       if (error) throw error;
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || '登入失敗');
+      setError(translateError(err.message));
     } finally {
       setLoading(false);
     }
