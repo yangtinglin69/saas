@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [showGuide, setShowGuide] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadSites();
@@ -40,6 +41,31 @@ export default function DashboardPage() {
   function hideGuide() {
     setShowGuide(false);
     localStorage.setItem('hideGuide', 'true');
+  }
+
+  async function deleteSite(siteId: string, siteName: string) {
+    const confirmed = window.confirm(`確定要刪除站點「${siteName}」嗎？\n\n此操作將刪除所有相關的產品、模組和文章資料，且無法復原！`);
+    
+    if (!confirmed) return;
+    
+    setDeleting(siteId);
+    
+    try {
+      // 刪除站點（關聯資料會因為 ON DELETE CASCADE 自動刪除）
+      const { error } = await supabase
+        .from('sites')
+        .delete()
+        .eq('id', siteId);
+      
+      if (error) throw error;
+      
+      // 重新載入站點列表
+      loadSites();
+    } catch (err: any) {
+      alert('刪除失敗：' + err.message);
+    } finally {
+      setDeleting(null);
+    }
   }
 
   if (loading) {
@@ -159,6 +185,14 @@ export default function DashboardPage() {
                   >
                     查看
                   </a>
+                  <button
+                    onClick={() => deleteSite(site.id, site.name)}
+                    disabled={deleting === site.id}
+                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm disabled:opacity-50"
+                    title="刪除站點"
+                  >
+                    {deleting === site.id ? '...' : '🗑️'}
+                  </button>
                 </div>
               </div>
             </div>
