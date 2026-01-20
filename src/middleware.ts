@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 const protectedPaths = ['/dashboard'];
 
 // 管理後台的域名（你的主網域）
-const adminDomains = ['localhost', 'affiliate-saas.vercel.app']; // 部署後改成你的域名
+const adminDomains = ['localhost', 'https://saas260120.vercel.app']; // 部署後改成你的域名
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
