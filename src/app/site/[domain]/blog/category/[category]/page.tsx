@@ -34,7 +34,7 @@ async function getCategoryData(domain: string, category: string) {
     .eq('site_id', site.id)
     .eq('status', 'published');
 
-  const categories = [...new Set((allPosts || []).map((p: any) => p.category).filter(Boolean))];
+  const categories = Array.from(new Set((allPosts || []).map((p: any) => p.category).filter(Boolean)));
 
   return { site, posts: posts || [], categories, currentCategory: decodedCategory };
 }
