@@ -5,13 +5,15 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-type ImportType = 'products' | 'testimonials' | 'faq' | 'comparison';
+type ImportType = 'products' | 'testimonials' | 'faq' | 'comparison' | 'method' | 'painPoints';
 
 const IMPORT_TYPES: { id: ImportType; icon: string; label: string; description: string }[] = [
   { id: 'products', icon: '📦', label: 'TOP 10 產品', description: '批量匯入產品資料' },
+  { id: 'method', icon: '🔬', label: '方法/特色', description: '匯入評測方法或特色' },
+  { id: 'painPoints', icon: '😫', label: '痛點區', description: '匯入讀者痛點' },
+  { id: 'comparison', icon: '📊', label: '比較表', description: '匯入快速比較資料' },
   { id: 'testimonials', icon: '💬', label: '客戶評價', description: '匯入用戶評價' },
   { id: 'faq', icon: '❓', label: 'FAQ 問答', description: '匯入常見問題' },
-  { id: 'comparison', icon: '📊', label: '比較表', description: '匯入快速比較資料' },
 ];
 
 const CSV_TEMPLATES: Record<ImportType, { headers: string[]; example: string[][] }> = {
@@ -21,17 +23,31 @@ const CSV_TEMPLATES: Record<ImportType, { headers: string[]; example: string[][]
       ['1', 'WinkBed', 'winkbed', 'Most Comfortable', 'Luxury hybrid mattress', '1799', '1299', '9.4', 'https://example.com/img.jpg', 'Great mattress for back sleepers...', 'https://affiliate.link/winkbed', 'Shop Now →'],
     ],
   },
+  method: {
+    headers: ['icon', 'title', 'description'],
+    example: [
+      ['🔬', '專業測試', '由專業團隊進行嚴格測試'],
+      ['📊', '數據分析', '收集真實用戶回饋數據'],
+    ],
+  },
+  painPoints: {
+    headers: ['icon', 'text'],
+    example: [
+      ['😫', '試過很多方法都沒效果'],
+      ['😰', '花了很多錢卻買到不適合的產品'],
+    ],
+  },
   testimonials: {
-    headers: ['name', 'avatar', 'product', 'rating', 'text'],
-    example: [['John D.', '👨', 'WinkBed', '5', 'Best mattress I ever bought! Highly recommend.']],
+    headers: ['name', 'title', 'content'],
+    example: [['王小明', '上班族', '用了之後效率提升很多！']],
   },
   faq: {
     headers: ['question', 'answer'],
-    example: [['What is the best mattress for back pain?', 'Based on our testing, the WinkBed offers excellent support...']],
+    example: [['這個產品適合新手嗎？', '非常適合！我們有完整的新手教學']],
   },
   comparison: {
-    headers: ['type', 'product', 'benefit'],
-    example: [['😴 Side Sleepers', 'Helix Midnight', '✓ Excellent pressure relief']],
+    headers: ['icon', 'type', 'recommendation', 'reason'],
+    example: [['👶', '新手入門', 'A 產品', '操作簡單易上手']],
   },
 };
 
@@ -108,9 +124,11 @@ export default function ImportPage() {
     try {
       const prompts: Record<ImportType, string> = {
         products: `Generate ${aiCount} product reviews for "${aiPrompt}" category. For each product include: rank (1-${aiCount}), name, slug (url-friendly), badge (like "Best Value", "Most Comfortable"), tagline, originalPrice, currentPrice (in USD), rating (1-10), imageUrl (use https://picsum.photos/400/300?random=N), briefReview (2-3 sentences), affiliateLink (use placeholder), ctaText. Return as JSON array only, no explanation.`,
-        testimonials: `Generate ${aiCount} realistic customer testimonials for "${aiPrompt}" products. For each include: name (first name + last initial), avatar (emoji), product (specific product name), rating (1-5), text (1-2 sentences). Return as JSON array only.`,
+        method: `Generate ${aiCount} testing methods or features for "${aiPrompt}" review website. For each include: icon (single emoji), title (short feature name), description (1-2 sentences explaining the method). Return as JSON array only.`,
+        painPoints: `Generate ${aiCount} customer pain points for people looking for "${aiPrompt}". For each include: icon (single emoji expressing frustration), text (the pain point in first person). Return as JSON array only.`,
+        testimonials: `Generate ${aiCount} realistic customer testimonials for "${aiPrompt}" products. For each include: name (Chinese name), title (job title), content (1-2 sentences review). Return as JSON array only.`,
         faq: `Generate ${aiCount} frequently asked questions about "${aiPrompt}". For each include: question, answer (detailed but concise). Return as JSON array only.`,
-        comparison: `Generate ${aiCount} comparison rows for "${aiPrompt}" products. For each include: type (customer type with emoji like "😴 Side Sleepers"), product (best product for that type), benefit (key benefit with checkmark). Return as JSON array only.`,
+        comparison: `Generate ${aiCount} comparison rows for "${aiPrompt}" products. For each include: icon (emoji for user type), type (customer type like "新手入門"), recommendation (product name), reason (key benefit). Return as JSON array only.`,
       };
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -132,12 +150,11 @@ export default function ImportPage() {
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || '';
       
-      // Parse JSON from response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         setCsvData(parsed);
-        showMsg('success', `✅ 已生成 ${parsed.length} 筆資料！`);
+        showMsg('success', `已生成 ${parsed.length} 筆資料！`);
       } else {
         throw new Error('無法解析 AI 回應');
       }
@@ -177,6 +194,38 @@ export default function ImportPage() {
 
         const { error } = await supabase.from('products').insert(products);
         if (error) throw error;
+      } else if (selectedType === 'method') {
+        const { data: module } = await supabase
+          .from('modules')
+          .select('content')
+          .eq('id', 'method')
+          .eq('site_id', siteId)
+          .single();
+
+        const existingFeatures = module?.content?.features || [];
+        const newFeatures = [...existingFeatures, ...csvData];
+
+        await supabase
+          .from('modules')
+          .update({ content: { ...module?.content, features: newFeatures } })
+          .eq('id', 'method')
+          .eq('site_id', siteId);
+      } else if (selectedType === 'painPoints') {
+        const { data: module } = await supabase
+          .from('modules')
+          .select('content')
+          .eq('id', 'painPoints')
+          .eq('site_id', siteId)
+          .single();
+
+        const existingPoints = module?.content?.points || [];
+        const newPoints = [...existingPoints, ...csvData];
+
+        await supabase
+          .from('modules')
+          .update({ content: { ...module?.content, points: newPoints } })
+          .eq('id', 'painPoints')
+          .eq('site_id', siteId);
       } else if (selectedType === 'testimonials') {
         const { data: module } = await supabase
           .from('modules')
@@ -217,17 +266,17 @@ export default function ImportPage() {
           .eq('site_id', siteId)
           .single();
 
-        const existingRows = module?.content?.rows || [];
-        const newRows = [...existingRows, ...csvData];
+        const existingItems = module?.content?.items || [];
+        const newItems = [...existingItems, ...csvData];
 
         await supabase
           .from('modules')
-          .update({ content: { ...module?.content, rows: newRows } })
+          .update({ content: { ...module?.content, items: newItems } })
           .eq('id', 'comparison')
           .eq('site_id', siteId);
       }
 
-      showMsg('success', `✅ 成功匯入 ${csvData.length} 筆資料！`);
+      showMsg('success', `成功匯入 ${csvData.length} 筆資料！`);
       setCsvData([]);
       setSelectedType(null);
       setMode(null);
@@ -263,7 +312,7 @@ export default function ImportPage() {
       {!selectedType && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h2 className="text-lg font-semibold mb-4">步驟 1：選擇要匯入的資料類型</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {IMPORT_TYPES.map((type) => (
               <button
                 key={type.id}
@@ -435,7 +484,7 @@ export default function ImportPage() {
               disabled={loading}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? '匯入中...' : `✅ 確認匯入 ${csvData.length} 筆資料`}
+              {loading ? '匯入中...' : `確認匯入 ${csvData.length} 筆資料`}
             </button>
           </div>
         </div>
