@@ -24,7 +24,7 @@ async function getBlogData(domain: string) {
     .order('published_at', { ascending: false });
 
   // 取得所有分類
-  const categories = [...new Set((posts || []).map((p: any) => p.category).filter(Boolean))];
+  const categories = Array.from(new Set((posts || []).map((p: any) => p.category).filter(Boolean)));
 
   return { site, posts: posts || [], categories };
 }
