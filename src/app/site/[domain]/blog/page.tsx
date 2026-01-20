@@ -7,7 +7,6 @@ interface Props {
 }
 
 async function getBlogData(domain: string) {
-  // 查詢站點
   const { data: site } = await supabase
     .from('sites')
     .select('*')
@@ -17,7 +16,6 @@ async function getBlogData(domain: string) {
 
   if (!site) return null;
 
-  // 查詢已發布的文章
   const { data: posts } = await supabase
     .from('posts')
     .select('*')
@@ -25,7 +23,10 @@ async function getBlogData(domain: string) {
     .eq('status', 'published')
     .order('published_at', { ascending: false });
 
-  return { site, posts: posts || [] };
+  // 取得所有分類
+  const categories = [...new Set((posts || []).map((p: any) => p.category).filter(Boolean))];
+
+  return { site, posts: posts || [], categories };
 }
 
 export default async function BlogPage({ params }: Props) {
@@ -35,7 +36,7 @@ export default async function BlogPage({ params }: Props) {
     notFound();
   }
 
-  const { site, posts } = data;
+  const { site, posts, categories } = data;
   const config = site.config || {};
   const colors = config.colors || {};
 
@@ -83,6 +84,32 @@ export default async function BlogPage({ params }: Props) {
         </div>
       </section>
 
+      {/* Categories */}
+      {categories.length > 0 && (
+        <section className="py-6 px-4 border-b bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-gray-500 text-sm">分類：</span>
+              <Link 
+                href="/blog"
+                className="px-3 py-1 rounded-full text-sm bg-blue-600 text-white"
+              >
+                全部
+              </Link>
+              {categories.map((cat: string) => (
+                <Link 
+                  key={cat}
+                  href={`/blog/category/${encodeURIComponent(cat)}`}
+                  className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                >
+                  {cat}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Posts Grid */}
       <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -109,6 +136,11 @@ export default async function BlogPage({ params }: Props) {
                     </div>
                   )}
                   <div className="p-5">
+                    {post.category && (
+                      <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 mb-2">
+                        {post.category}
+                      </span>
+                    )}
                     <h2 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition">
                       {post.title}
                     </h2>
@@ -121,6 +153,13 @@ export default async function BlogPage({ params }: Props) {
                       <span>{post.author || '編輯部'}</span>
                       <span>{new Date(post.published_at).toLocaleDateString()}</span>
                     </div>
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {post.tags.slice(0, 3).map((tag: string, i: number) => (
+                          <span key={i} className="text-xs text-gray-400">#{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}
