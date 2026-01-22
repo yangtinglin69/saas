@@ -75,7 +75,7 @@ export default function ProductCard({ product, index, colors, domain }: ProductC
                   <span className="font-bold text-cyan-500">${product.price?.current}</span>
                 </div>
               </div>
-              {product.specs?.slice(0, 3).map((spec: any, i: number) => (
+              {Array.isArray(product.specs) && product.specs.slice(0, 3).map((spec: any, i: number) => (
                 <div key={i} className="text-center">
                   <div className="text-xs text-gray-500 mb-1">{spec.label}</div>
                   <div className="text-sm font-medium text-gray-900">{spec.value}</div>
@@ -86,7 +86,7 @@ export default function ProductCard({ product, index, colors, domain }: ProductC
             {/* 展開區塊 */}
             <div className="space-y-2">
               {/* Best For */}
-              {product.best_for?.length > 0 && (
+              {Array.isArray(product.best_for) && product.best_for.length > 0 && (
                 <div className="border rounded-lg overflow-hidden">
                   <button
                     onClick={() => toggleSection('bestFor')}
@@ -129,7 +129,7 @@ export default function ProductCard({ product, index, colors, domain }: ProductC
               )}
 
               {/* Detailed Scores */}
-              {product.scores?.length > 0 && (
+              {Array.isArray(product.scores) && product.scores.length > 0 && (
                 <div className="border rounded-lg overflow-hidden">
                   <button
                     onClick={() => toggleSection('scores')}
