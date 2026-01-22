@@ -153,7 +153,7 @@ export default async function ProductDetailPage({ params }: Props) {
       </section>
 
       {/* 快速規格 */}
-      {product.specs?.length > 0 && (
+      {Array.isArray(product.specs) && product.specs.length > 0 && (
         <section className="py-6 px-4 bg-white border-b">
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-wrap justify-center gap-8">
@@ -170,11 +170,11 @@ export default async function ProductDetailPage({ params }: Props) {
 
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
         {/* 適合誰 */}
-        {(product.best_for?.length > 0 || product.not_best_for?.length > 0) && (
+        {(Array.isArray(product.best_for) && product.best_for.length > 0 || Array.isArray(product.not_best_for) && product.not_best_for.length > 0) && (
           <section className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">🎯 Who Is It Best For?</h2>
             <div className="grid md:grid-cols-2 gap-8">
-              {product.best_for?.length > 0 && (
+              {Array.isArray(product.best_for) && product.best_for.length > 0 && (
                 <div className="p-4 bg-green-50 rounded-xl">
                   <h3 className="font-semibold text-green-700 mb-3">✅ Best For</h3>
                   <ul className="space-y-2">
@@ -187,7 +187,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   </ul>
                 </div>
               )}
-              {product.not_best_for?.length > 0 && (
+              {Array.isArray(product.not_best_for) && product.not_best_for.length > 0 && (
                 <div className="p-4 bg-red-50 rounded-xl">
                   <h3 className="font-semibold text-red-700 mb-3">❌ Not Ideal For</h3>
                   <ul className="space-y-2">
@@ -217,7 +217,7 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
 
         {/* 材質結構 */}
-        {product.materials?.length > 0 && (
+        {Array.isArray(product.materials) && product.materials.length > 0 && (
           <section className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">🔧 Inside the {product.name}</h2>
             <div className="space-y-4">
@@ -237,7 +237,7 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
 
         {/* 詳細評分 */}
-        {product.scores?.length > 0 && (
+        {Array.isArray(product.scores) && product.scores.length > 0 && (
           <section className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">⭐ Detailed Scores</h2>
             <div className="space-y-4">
@@ -263,11 +263,11 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
 
         {/* 優缺點 */}
-        {(product.pros?.length > 0 || product.cons?.length > 0) && (
+        {(Array.isArray(product.pros) && product.pros.length > 0 || Array.isArray(product.cons) && product.cons.length > 0) && (
           <section className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">👍 Pros & Cons</h2>
             <div className="grid md:grid-cols-2 gap-8">
-              {product.pros?.length > 0 && (
+              {Array.isArray(product.pros) && product.pros.length > 0 && (
                 <div className="p-6 bg-green-50 rounded-xl">
                   <h3 className="font-semibold text-green-700 mb-4 text-lg">✅ What We Like</h3>
                   <ul className="space-y-2">
@@ -277,7 +277,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   </ul>
                 </div>
               )}
-              {product.cons?.length > 0 && (
+              {Array.isArray(product.cons) && product.cons.length > 0 && (
                 <div className="p-6 bg-red-50 rounded-xl">
                   <h3 className="font-semibold text-red-700 mb-4 text-lg">❌ What We Don&apos;t Like</h3>
                   <ul className="space-y-2">
@@ -292,7 +292,7 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
 
         {/* 產品 FAQ */}
-        {product.faqs?.length > 0 && (
+        {Array.isArray(product.faqs) && product.faqs.length > 0 && (
           <section className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">❓ Frequently Asked Questions</h2>
             <div className="space-y-4">
