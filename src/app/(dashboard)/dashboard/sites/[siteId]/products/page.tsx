@@ -1,9 +1,14 @@
-// src/app/dashboard/sites/[siteId]/products/page.tsx
+// src/app/(dashboard)/dashboard/sites/[siteId]/products/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Product {
   id: string;
@@ -44,7 +49,6 @@ const emptyProduct: Omit<Product, 'id' | 'site_id'> = {
 export default function ProductsPage() {
   const params = useParams();
   const siteId = params.siteId as string;
-  const supabase = createClientComponentClient();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
