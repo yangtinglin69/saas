@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
+import ProductCard from './ProductCard';
 
 // 強制動態渲染，不要快取（解決問題 1 和 3）
 export const dynamic = 'force-dynamic';
@@ -10,9 +11,9 @@ interface Props {
 }
 
 async function getSiteData(domain: string) {
-  // 查詢站點
+  // 查詢站點 - 修正：sites → site_config
   const { data: site } = await supabase
-    .from('sites')
+    .from('site_config')
     .select('*')
     .eq('full_domain', domain)
     .eq('is_active', true)
@@ -314,113 +315,12 @@ export default async function SitePage({ params }: Props) {
                   </div>
                   <div className="space-y-6">
                     {products.slice(0, content.showCount || 10).map((product: any, index: number) => (
-                      <div key={product.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                        {/* Badge Header */}
-                        {product.badge && (
-                          <div className="px-4 py-2 flex justify-between items-center" style={{ backgroundColor: colors.accent || '#3b82f6' }}>
-                            <span className="text-white font-medium text-sm">{product.badge}</span>
-                            <span className="text-white text-sm">⭐ {product.rating}/10 Test Lab Score</span>
-                          </div>
-                        )}
-                        
-                        <div className="p-4 md:p-6">
-                          {/* Mobile Layout */}
-                          <div className="md:hidden">
-                            <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden mb-4">
-                              {product.images?.main && (
-                                <img src={product.images.main} alt={product.name} className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                            
-                            {product.affiliate_link && (
-                              <a
-                                href={product.affiliate_link}
-                                target="_blank"
-                                rel="noopener sponsored"
-                                className="block w-full text-center px-6 py-3 rounded-lg font-semibold transition hover:opacity-90 mb-4"
-                                style={{ backgroundColor: colors.buttonBg || '#22c55e', color: colors.buttonText || '#fff' }}
-                              >
-                                {product.cta_text || 'Shop Now →'}
-                              </a>
-                            )}
-                            
-                            <h3 className="text-xl font-bold text-gray-900 mb-1">{product.name}</h3>
-                            <p className="text-gray-600 text-sm mb-4">{product.tagline}</p>
-                            
-                            <div className="grid grid-cols-2 gap-3 py-4 border-t border-b border-gray-100 mb-4">
-                              <div className="text-center">
-                                <div className="text-xs text-gray-500 mb-1">Price</div>
-                                <div className="flex flex-col items-center">
-                                  {product.price?.original > product.price?.current && (
-                                    <span className="text-gray-400 line-through text-sm">${product.price?.original}</span>
-                                  )}
-                                  <span className="font-bold" style={{ color: colors.primary || '#22c55e' }}>
-                                    ${product.price?.current}
-                                  </span>
-                                </div>
-                              </div>
-                              {product.specs?.slice(0, 3).map((spec: any, i: number) => (
-                                <div key={i} className="text-center">
-                                  <div className="text-xs text-gray-500 mb-1">{spec.label}</div>
-                                  <div className="text-sm font-medium text-gray-900">{spec.value}</div>
-                                </div>
-                              ))}
-                            </div>
-                            
-                            {product.brief_review && (
-                              <p className="text-gray-600 text-sm">{product.brief_review}</p>
-                            )}
-                          </div>
-                          
-                          {/* Desktop Layout */}
-                          <div className="hidden md:flex items-start gap-6">
-                            <div className="text-3xl font-bold text-gray-300">#{index + 1}</div>
-                            <div className="w-48 h-36 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                              {product.images?.main && (
-                                <img src={product.images.main} alt={product.name} className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-xl font-bold text-gray-900 mb-1">{product.name}</h3>
-                              <p className="text-gray-600 mb-2">{product.tagline}</p>
-                              
-                              <div className="flex items-center gap-6 py-3 border-t border-b border-gray-100 my-3">
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Price</div>
-                                  <div className="flex items-center gap-2">
-                                    {product.price?.original > product.price?.current && (
-                                      <span className="text-gray-400 line-through text-sm">${product.price?.original}</span>
-                                    )}
-                                    <span className="font-bold" style={{ color: colors.primary || '#22c55e' }}>
-                                      ${product.price?.current}
-                                    </span>
-                                  </div>
-                                </div>
-                                {product.specs?.slice(0, 3).map((spec: any, i: number) => (
-                                  <div key={i}>
-                                    <div className="text-xs text-gray-500 mb-1">{spec.label}</div>
-                                    <div className="text-sm font-medium text-gray-900">{spec.value}</div>
-                                  </div>
-                                ))}
-                              </div>
-                              
-                              <p className="text-gray-500 text-sm mb-4">{product.brief_review}</p>
-                              
-                              {product.affiliate_link && (
-                                <a
-                                  href={product.affiliate_link}
-                                  target="_blank"
-                                  rel="noopener sponsored"
-                                  className="inline-block px-6 py-2 rounded-lg font-medium transition hover:opacity-90"
-                                  style={{ backgroundColor: colors.buttonBg || '#22c55e', color: colors.buttonText || '#fff' }}
-                                >
-                                  {product.cta_text || 'Shop Now →'}
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <ProductCard 
+                        key={product.id} 
+                        product={product} 
+                        index={index} 
+                        colors={colors} 
+                      />
                     ))}
                   </div>
                 </div>
