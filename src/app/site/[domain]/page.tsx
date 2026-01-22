@@ -11,9 +11,9 @@ interface Props {
 }
 
 async function getSiteData(domain: string) {
-  // 查詢站點 - 修正：sites → site_config
+  // 查詢站點
   const { data: site } = await supabase
-    .from('site_config')
+    .from('sites')
     .select('*')
     .eq('full_domain', domain)
     .eq('is_active', true)
