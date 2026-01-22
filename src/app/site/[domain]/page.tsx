@@ -28,12 +28,12 @@ async function getSiteData(domain: string) {
     .eq('is_active', true)
     .order('rank', { ascending: true });
 
-  // 查詢模組
+  // 查詢模組 - 修正：sort_order → display_order
   const { data: modules } = await supabase
     .from('modules')
     .select('*')
     .eq('site_id', site.id)
-    .order('sort_order', { ascending: true });
+    .order('display_order', { ascending: true });
 
   return { site, products: products || [], modules: modules || [] };
 }
@@ -69,10 +69,10 @@ export default async function SitePage({ params }: Props) {
   const config = site.config || {};
   const colors = config.colors || {};
 
-  // 根據 sort_order 排序並過濾啟用的模組
+  // 修正：is_enabled → enabled, sort_order → display_order
   const enabledModules = modules
-    .filter((m: any) => m.is_enabled)
-    .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+    .filter((m: any) => m.enabled)
+    .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
@@ -151,9 +151,9 @@ export default async function SitePage({ params }: Props) {
               </section>
             );
 
-          // ===== 痛點區 =====
+          // ===== 痛點區 ===== 修正：items → points
           case 'painPoints':
-            if (!content.items?.length) return null;
+            if (!content.points?.length) return null;
             return (
               <section key={module.id} className="py-16 px-4 bg-white">
                 <div className="max-w-6xl mx-auto">
@@ -172,7 +172,7 @@ export default async function SitePage({ params }: Props) {
                         {content.title || '你是不是也有這些困擾？'}
                       </h2>
                       <div className="space-y-4">
-                        {content.items.map((item: any, i: number) => (
+                        {content.points.map((item: any, i: number) => (
                           <div key={i} className="flex items-start gap-4 p-4 bg-red-50 rounded-xl">
                             <span className="text-2xl">{item.icon || '😫'}</span>
                             <p className="text-gray-700 text-lg">{item.text}</p>
@@ -454,7 +454,7 @@ export default async function SitePage({ params }: Props) {
                             </span>
                           ))}
                         </div>
-                        <p className="text-gray-600">"{item.content || item.text}"</p>
+                        <p className="text-gray-600">&quot;{item.content || item.text}&quot;</p>
                       </div>
                     ))}
                   </div>
