@@ -319,7 +319,8 @@ export default async function SitePage({ params }: Props) {
                         key={product.id} 
                         product={product} 
                         index={index} 
-                        colors={colors} 
+                        colors={colors}
+                        domain={params.domain}
                       />
                     ))}
                   </div>
