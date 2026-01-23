@@ -34,6 +34,7 @@ interface Product {
   affiliate_link: string;
   cta_text: string;
   is_active: boolean;
+  show_in_ranking: boolean;  // ⬅️ 新增欄位
 }
 
 const emptyProduct: Omit<Product, 'id' | 'site_id'> = {
@@ -43,7 +44,9 @@ const emptyProduct: Omit<Product, 'id' | 'site_id'> = {
   specs: [], best_for: [], not_best_for: [],
   brief_review: '', full_review: '',
   materials: [], scores: [], pros: [], cons: [], faqs: [],
-  affiliate_link: '', cta_text: 'Shop Now →', is_active: true,
+  affiliate_link: '', cta_text: 'Shop Now →', 
+  is_active: true,
+  show_in_ranking: true,  // ⬅️ 預設為 true
 };
 
 export default function ProductsPage() {
@@ -263,7 +266,19 @@ export default function ProductsPage() {
                 </td>
                 <td className="px-4 py-3"><span className="text-yellow-500">⭐</span> {product.rating}/10</td>
                 <td className="px-4 py-3">${product.price?.current}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>{product.is_active ? '啟用' : '停用'}</span></td>
+                {/* ✅ 修改：顯示兩種狀態 */}
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <span className={`px-2 py-0.5 rounded-full text-xs inline-block w-fit ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      {product.is_active ? '✓ 啟用' : '✗ 停用'}
+                    </span>
+                    {product.is_active && (
+                      <span className={`px-2 py-0.5 rounded-full text-xs inline-block w-fit ${product.show_in_ranking !== false ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}`}>
+                        {product.show_in_ranking !== false ? '📊 顯示排行' : '🙈 隱藏排行'}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => { setEditingProduct(product); setActiveTab('basic'); }} className="text-blue-600 hover:text-blue-800 mr-3">編輯</button>
                   <button onClick={() => deleteProduct(product.id)} className="text-red-600 hover:text-red-800">刪除</button>
@@ -302,7 +317,47 @@ export default function ProductsPage() {
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">標籤 Badge</label><input type="text" value={editingProduct.badge} onChange={(e) => setEditingProduct({ ...editingProduct, badge: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Most Comfortable" /></div>
                   </div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label><input type="text" value={editingProduct.tagline} onChange={(e) => setEditingProduct({ ...editingProduct, tagline: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="High-end hybrid bed..." /></div>
-                  <div className="flex items-center gap-2"><input type="checkbox" id="is_active" checked={editingProduct.is_active} onChange={(e) => setEditingProduct({ ...editingProduct, is_active: e.target.checked })} className="rounded" /><label htmlFor="is_active" className="text-sm text-gray-700">啟用此產品</label></div>
+                  
+                  {/* ============================================ */}
+                  {/* ✅ 新增：顯示控制區塊 */}
+                  {/* ============================================ */}
+                  <div className="border-t pt-4 mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">顯示設定</label>
+                    <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <input 
+                          type="checkbox" 
+                          id="is_active" 
+                          checked={editingProduct.is_active} 
+                          onChange={(e) => setEditingProduct({ ...editingProduct, is_active: e.target.checked })} 
+                          className="rounded mt-1" 
+                        />
+                        <div>
+                          <label htmlFor="is_active" className="text-sm font-medium text-gray-700">啟用此產品</label>
+                          <p className="text-xs text-gray-500">關閉後，產品頁面將無法訪問（404）</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3">
+                        <input 
+                          type="checkbox" 
+                          id="show_in_ranking" 
+                          checked={editingProduct.show_in_ranking !== false} 
+                          onChange={(e) => setEditingProduct({ ...editingProduct, show_in_ranking: e.target.checked })} 
+                          className="rounded mt-1" 
+                          disabled={!editingProduct.is_active}
+                        />
+                        <div>
+                          <label htmlFor="show_in_ranking" className={`text-sm font-medium ${editingProduct.is_active ? 'text-gray-700' : 'text-gray-400'}`}>
+                            顯示在排行榜
+                          </label>
+                          <p className="text-xs text-gray-500">
+                            取消勾選後，產品不會出現在首頁 Top 10 列表，但產品頁面仍可訪問（適合 SEO 保留）
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -349,7 +404,7 @@ export default function ProductsPage() {
               {activeTab === 'affiliate' && (
                 <div className="space-y-4">
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">聯盟連結 URL</label><input type="text" value={editingProduct.affiliate_link || ''} onChange={(e) => setEditingProduct({ ...editingProduct, affiliate_link: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="https://..." /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">CTA 按鈕文字</label><input type="text" value={editingProduct.cta_text || ''} onChange={(e) => setEditingProduct({ ...editingProduct, cta_text: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Shop Now →" /></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">CTA 按鈕文字</label><input type="text" value={editingProduct.cta_text || ''} onChange={(e) => setEditingProduct({ ...editingProduct, cta_text: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Shop Now →" /><p className="text-xs text-gray-500 mt-1">此文字會顯示在產品頁的購買按鈕上</p></div>
                 </div>
               )}
             </div>
