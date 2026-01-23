@@ -7,10 +7,14 @@ interface Props {
 }
 
 async function getCategoryData(domain: string, category: string) {
+  // 處理 www 前綴的匹配問題
+  const cleanDomain = domain.replace(/^www\./, '');
+  const domainVariants = [cleanDomain, `www.${cleanDomain}`];
+
   const { data: site } = await supabase
     .from('sites')
     .select('*')
-    .eq('full_domain', domain)
+    .in('full_domain', domainVariants)
     .eq('is_active', true)
     .single();
 
