@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -30,6 +29,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     { id: 'modules', label: '🧩 模組', href: `/dashboard/sites/${siteId}/modules` },
     { id: 'posts', label: '📝 文章', href: `/dashboard/sites/${siteId}/posts` },
     { id: 'import', label: '📥 匯入', href: `/dashboard/sites/${siteId}/import` },
+    { id: 'sitemap', label: '🗺️ Sitemap', href: `/dashboard/sites/${siteId}/sitemap` },  // ← 新增這行
     { id: 'settings', label: '⚙️ 設定', href: `/dashboard/sites/${siteId}/settings` },
   ];
 
