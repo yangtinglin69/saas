@@ -1,8 +1,10 @@
+// src/app/site/[domain]/page.tsx
+
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import ProductCard from './ProductCard';
 
-// 強制動態渲染，不要快取（解決問題 1 和 3）
+// 強制動態渲染，不要快取
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -25,15 +27,18 @@ async function getSiteData(domain: string) {
 
   if (!site) return null;
 
-  // 查詢產品
+  // ============================================
+  // ✅ 修改：查詢產品時加入 show_in_ranking 過濾
+  // ============================================
   const { data: products } = await supabase
     .from('products')
     .select('*')
     .eq('site_id', site.id)
     .eq('is_active', true)
+    .eq('show_in_ranking', true)  // ⬅️ 新增：只顯示勾選「顯示在排行榜」的產品
     .order('rank', { ascending: true });
 
-  // 查詢模組 - 修正：sort_order → display_order
+  // 查詢模組
   const { data: modules } = await supabase
     .from('modules')
     .select('*')
@@ -74,7 +79,6 @@ export default async function SitePage({ params }: Props) {
   const config = site.config || {};
   const colors = config.colors || {};
 
-  // 修正：is_enabled → enabled, sort_order → display_order
   const enabledModules = modules
     .filter((m: any) => m.enabled)
     .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
@@ -156,7 +160,7 @@ export default async function SitePage({ params }: Props) {
               </section>
             );
 
-          // ===== 痛點區 ===== 修正：items → points
+          // ===== 痛點區 =====
           case 'painPoints':
             if (!content.points?.length) return null;
             return (
