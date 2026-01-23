@@ -1,3 +1,5 @@
+// src/app/site/[domain]/products/[slug]/page.tsx
+
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -20,7 +22,7 @@ async function getProductData(domain: string, slug: string) {
 
   if (!site) return null;
 
-  // 查詢產品
+  // 查詢產品（只要 is_active = true 就顯示，不管 show_in_ranking）
   const { data: product } = await supabase
     .from('products')
     .select('*')
@@ -34,16 +36,31 @@ async function getProductData(domain: string, slug: string) {
   return { site, product };
 }
 
-// SEO Metadata
+// ============================================
+// ✅ 修改: SEO Metadata - 產品名稱放在 Title 前面
+// ============================================
 export async function generateMetadata({ params }: Props) {
   const data = await getProductData(params.domain, params.slug);
   if (!data) return { title: 'Product Not Found' };
   
   const { site, product } = data;
+  const config = site.config || {};
+  const year = new Date().getFullYear();
+  
+  // 取得分類名稱（從 site config）
+  const categoryName = config.category_name || config.categoryName || 'Product';
+  
+  // ⭐ 新格式：產品名稱 | Best [分類] [年份]: Top 10 Reviews & Comparison
+  const title = `${product.name} | Best ${categoryName} ${year}: Top 10 Reviews & Comparison`;
   
   return {
-    title: `${product.name} Review | ${site.name}`,
-    description: product.tagline || product.brief_review,
+    title,
+    description: product.tagline || product.brief_review || `${product.name} review and comparison`,
+    openGraph: {
+      title,
+      description: product.tagline || product.brief_review,
+      images: product.images?.main ? [product.images.main] : [],
+    },
   };
 }
 
@@ -57,6 +74,9 @@ export default async function ProductDetailPage({ params }: Props) {
   const { site, product } = data;
   const config = site.config || {};
   const colors = config.colors || {};
+  
+  // ✅ CTA 按鈕文字：優先使用後台設定的 cta_text，否則用預設值
+  const ctaText = product.cta_text || `Shop ${product.name} →`;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -135,7 +155,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 </div>
               </div>
               
-              {/* CTA 按鈕 */}
+              {/* ✅ CTA 按鈕 - 使用動態文字 */}
               {product.affiliate_link && (
                 <a
                   href={product.affiliate_link}
@@ -144,7 +164,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   className="inline-block px-8 py-4 rounded-lg font-semibold text-lg transition hover:opacity-90"
                   style={{ backgroundColor: colors.buttonBg || '#0ea5e9', color: colors.buttonText || '#fff' }}
                 >
-                  Shop {product.name} →
+                  {ctaText}
                 </a>
               )}
             </div>
@@ -306,7 +326,7 @@ export default async function ProductDetailPage({ params }: Props) {
           </section>
         )}
 
-        {/* 底部 CTA */}
+        {/* ✅ 底部 CTA - 使用動態文字 */}
         <section className="text-center py-8">
           <div className="rounded-2xl p-8 text-white" style={{ backgroundColor: colors.headerBg || '#1e3a5f' }}>
             <h2 className="text-2xl font-bold mb-2">Ready to try {product.name}?</h2>
@@ -321,7 +341,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   className="inline-block px-8 py-3 bg-white rounded-lg font-semibold transition hover:bg-gray-100"
                   style={{ color: colors.headerBg || '#1e3a5f' }}
                 >
-                  Shop {product.name} →
+                  {ctaText}
                 </a>
               )}
             </div>
